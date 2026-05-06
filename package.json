@@ -1,0 +1,44 @@
+{
+  "name": "pi-figma-remote-auth",
+  "version": "0.1.0",
+  "description": "Pi extension that authenticates and configures Figma Remote MCP for pi-mcp-adapter.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "figma",
+    "mcp",
+    "remote-mcp",
+    "pi-mcp-adapter",
+    "oauth"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ght-dian/pi-figma-remote-auth.git"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "pi-mcp-adapter": ">=2.5.4"
+  },
+  "peerDependenciesMeta": {
+    "pi-mcp-adapter": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "latest",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

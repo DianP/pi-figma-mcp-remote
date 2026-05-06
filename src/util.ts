@@ -56,9 +56,13 @@ export function readJsonObject(path: string): Record<string, unknown> {
 	}
 }
 
-export async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+export async function fetchJson<T>(url: string, init?: RequestInit, timeoutMs = 30_000): Promise<T> {
 	const method = init?.method ?? "GET";
-	const response = await fetch(url, init);
+	const timeoutSignal = AbortSignal.timeout(timeoutMs);
+	const signal = init?.signal
+		? AbortSignal.any([init.signal, timeoutSignal])
+		: timeoutSignal;
+	const response = await fetch(url, { ...init, signal });
 	if (!response.ok) {
 		const text = await response.text().catch(() => "");
 		throw new Error(

@@ -9,7 +9,6 @@ import {
 import {
 	base64Url,
 	fetchJson,
-	formatUserError,
 	optionalNumberField,
 	optionalStringField,
 	stringField,
@@ -38,7 +37,7 @@ export async function runOAuthFlow(options: OAuthFlowOptions): Promise<string> {
 	const redirectUri = callbackListener.callbackUrl;
 
 	try {
-		const endpoints = await discoverOAuthEndpoints(options.url);
+		const endpoints = await discoverOAuthEndpoints(options.url, options.signal);
 		if (!endpoints.registrationEndpoint) {
 			throw new Error("OAuth metadata did not include a registration_endpoint");
 		}
@@ -47,6 +46,7 @@ export async function runOAuthFlow(options: OAuthFlowOptions): Promise<string> {
 			endpoints.registrationEndpoint,
 			redirectUri,
 			options.clientName,
+			options.signal,
 		);
 		const authorizationUrl = buildAuthorizationUrl(
 			endpoints.authorizationEndpoint,
@@ -65,6 +65,7 @@ export async function runOAuthFlow(options: OAuthFlowOptions): Promise<string> {
 			redirectUri,
 			callback.code,
 			codeVerifier,
+			options.signal,
 		);
 		return saveAdapterAuth(options.serverName, options.url, client, tokens);
 	} finally {
@@ -80,13 +81,14 @@ interface OAuthEndpoints {
 
 async function discoverOAuthEndpoints(
 	serverUrl: string,
+	signal?: AbortSignal,
 ): Promise<OAuthEndpoints> {
 	const base = new URL(serverUrl);
 	const wellKnownUrl = new URL(
 		"/.well-known/oauth-authorization-server",
 		base.origin,
 	).href;
-	const metadata = await fetchJson<Record<string, unknown>>(wellKnownUrl);
+	const metadata = await fetchJson<Record<string, unknown>>(wellKnownUrl, { signal });
 	const authorizationEndpoint = stringField(metadata, "authorization_endpoint");
 	const tokenEndpoint = stringField(metadata, "token_endpoint");
 	const registrationEndpoint = optionalStringField(
@@ -105,6 +107,7 @@ async function registerClient(
 	registrationEndpoint: string,
 	redirectUri: string,
 	clientName: string,
+	signal?: AbortSignal,
 ): Promise<RegisteredClient> {
 	const body = {
 		redirect_uris: [redirectUri],
@@ -120,6 +123,7 @@ async function registerClient(
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(body),
+			signal,
 		},
 	);
 
@@ -169,6 +173,7 @@ async function exchangeCodeForTokens(
 	redirectUri: string,
 	code: string,
 	codeVerifier: string,
+	signal?: AbortSignal,
 ): Promise<TokenResponse> {
 	const params = new URLSearchParams();
 	params.set("grant_type", "authorization_code");
@@ -182,6 +187,7 @@ async function exchangeCodeForTokens(
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body: params.toString(),
+		signal,
 	});
 
 	const accessToken = stringField(result, "access_token");
@@ -238,37 +244,50 @@ async function waitForCallback(
 	};
 
 	const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+		let url: URL;
 		try {
 			const host = req.headers.host ?? `localhost:${port}`;
-			const url = new URL(req.url ?? "/", `http://${host}`);
-			if (url.pathname !== CALLBACK_PATH) {
-				res.writeHead(404, { "Content-Type": "text/plain" });
-				res.end("Not found");
-				return;
-			}
-
-			const oauthError = url.searchParams.get("error");
-			if (oauthError) {
-				const description =
-					url.searchParams.get("error_description") ?? "OAuth error";
-				throw new Error(`${oauthError}: ${description}`);
-			}
-
-			const code = url.searchParams.get("code");
-			const state = url.searchParams.get("state");
-			if (!code || !state)
-				throw new Error("OAuth callback missing code or state");
-			if (state !== expectedState) throw new Error("OAuth state mismatch");
-
-			res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-			res.end(successHtml());
-			resolveResult({ code, state });
-			close();
-		} catch (error) {
+			url = new URL(req.url ?? "/", `http://${host}`);
+		} catch {
 			res.writeHead(400, { "Content-Type": "text/plain" });
-			res.end(formatUserError(error));
-			fail(error);
+			res.end("Bad request");
+			return;
 		}
+
+		if (url.pathname !== CALLBACK_PATH) {
+			res.writeHead(404, { "Content-Type": "text/plain" });
+			res.end("Not found");
+			return;
+		}
+
+		const oauthError = url.searchParams.get("error");
+		if (oauthError) {
+			const description =
+				url.searchParams.get("error_description") ?? "OAuth error";
+			res.writeHead(400, { "Content-Type": "text/plain" });
+			res.end(`${oauthError}: ${description}`);
+			fail(new Error(`${oauthError}: ${description}`));
+			return;
+		}
+
+		const code = url.searchParams.get("code");
+		const state = url.searchParams.get("state");
+		if (!code || !state) {
+			res.writeHead(400, { "Content-Type": "text/plain" });
+			res.end("OAuth callback missing code or state");
+			return;
+		}
+
+		if (state !== expectedState) {
+			res.writeHead(400, { "Content-Type": "text/plain" });
+			res.end("OAuth state mismatch");
+			return;
+		}
+
+		res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+		res.end(successHtml());
+		resolveResult({ code, state });
+		close();
 	});
 
 	await new Promise<void>((resolve, reject) => {

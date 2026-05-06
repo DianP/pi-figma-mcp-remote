@@ -19,18 +19,13 @@ export function writeMcpConfig(
 	const configPath = getMcpConfigPath(options.target, cwd);
 	const config = readJsonObject(configPath);
 	const mcpServers = asRecord(config.mcpServers);
-	const server = asRecord(mcpServers[options.serverName]);
-
-	delete server.command;
-	delete server.args;
-	delete server.env;
-	delete server.cwd;
-
-	server.url = options.url;
-	server.auth = "oauth";
-	server.lifecycle = options.keepAlive ? "keep-alive" : "lazy";
-	server.exposeResources = true;
-	server.directTools = options.directTools;
+	const server = {
+		url: options.url,
+		auth: "oauth",
+		lifecycle: options.keepAlive ? "keep-alive" : "lazy",
+		exposeResources: true,
+		directTools: options.directTools,
+	};
 
 	mcpServers[options.serverName] = server;
 	config.mcpServers = mcpServers;

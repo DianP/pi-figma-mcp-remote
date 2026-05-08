@@ -4,6 +4,7 @@
   "description": "Pi extension that authenticates and configures Figma Remote MCP for pi-mcp-adapter.",
   "type": "module",
   "license": "MIT",
+  "author": "DianP",
   "keywords": [
     "pi-package",
     "pi",
@@ -13,14 +14,26 @@
     "pi-mcp-adapter",
     "oauth"
   ],
+  "homepage": "https://github.com/dianp/pi-figma-remote-auth#readme",
+  "bugs": {
+    "url": "https://github.com/dianp/pi-figma-remote-auth/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ght-dian/pi-figma-remote-auth.git"
+    "url": "git+https://github.com/dianp/pi-figma-remote-auth.git"
+  },
+  "engines": {
+    "node": ">=22.6.0"
   },
   "pi": {
     "extensions": [
       "./index.ts"
     ]
+  },
+  "scripts": {
+    "pretest": "node --experimental-strip-types tests/ensure-symlinks.ts",
+    "test": "tsc --noEmit",
+    "prepublishOnly": "npm test"
   },
   "files": [
     "index.ts",
@@ -29,6 +42,7 @@
     "LICENSE"
   ],
   "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
     "pi-mcp-adapter": ">=2.5.4"
   },
   "peerDependenciesMeta": {
@@ -37,7 +51,7 @@
     }
   },
   "devDependencies": {
-    "@mariozechner/pi-coding-agent": "latest",
+    "@earendil-works/pi-coding-agent": "latest",
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
   }

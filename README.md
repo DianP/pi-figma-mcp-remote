@@ -25,16 +25,22 @@ Restart Pi.
 
 ## Install this package
 
-From this repo:
+From npm:
+
+```sh
+pi install npm:pi-figma-remote-auth
+```
+
+Or from a local checkout:
 
 ```sh
 pi install /absolute/path/to/pi-figma-remote-auth
 ```
 
-Or for one run:
+Or for one run, without installing:
 
 ```sh
-pi -e /absolute/path/to/pi-figma-remote-auth
+pi -e npm:pi-figma-remote-auth
 ```
 
 ## Usage

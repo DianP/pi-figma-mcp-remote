@@ -14,13 +14,13 @@
     "pi-mcp-adapter",
     "oauth"
   ],
-  "homepage": "https://github.com/dianp/pi-figma-remote-auth#readme",
+  "homepage": "https://github.com/DianP/pi-figma-remote-auth#readme",
   "bugs": {
-    "url": "https://github.com/dianp/pi-figma-remote-auth/issues"
+    "url": "https://github.com/DianP/pi-figma-remote-auth/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dianp/pi-figma-remote-auth.git"
+    "url": "git+https://github.com/DianP/pi-figma-remote-auth.git"
   },
   "engines": {
     "node": ">=22.6.0"
@@ -51,8 +51,8 @@
     }
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "latest",
-    "@types/node": "^20.0.0",
+    "@earendil-works/pi-coding-agent": "^0.74.0",
+    "@types/node": "^22.0.0",
     "typescript": "^5.0.0"
   }
 }

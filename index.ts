@@ -1,5 +1,4 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { existsSync } from "node:fs";
 import {
 	assertMcpAdapterExists,
 	hasMcpAdapter,
@@ -17,6 +16,7 @@ import {
 	writeMcpConfig,
 } from "./src/config.js";
 import {
+	findAuthFilePath,
 	getAuthFilePath,
 	readAuthEntry,
 	removeAuthFile,
@@ -123,6 +123,7 @@ async function dispatch(
 					[
 						`Figma OAuth credentials saved: ${authPath}`,
 						`Restart Pi or run /mcp reconnect ${command.serverName}.`,
+						"pi-mcp-adapter >= 2.13.0 imports the file into the OS credential store on connect and deletes it.",
 					].join("\n"),
 					"info",
 				);
@@ -167,8 +168,8 @@ function buildStatus(
 	const configHits = getKnownConfigPaths(cwd).filter((path) =>
 		configContainsServer(path, serverName),
 	);
-	const authPath = getAuthFilePath(serverName);
-	const auth = readAuthEntry(authPath);
+	const authPath = findAuthFilePath(serverName);
+	const auth = authPath ? readAuthEntry(authPath) : undefined;
 	const adapterPresent = hasMcpAdapter(pi);
 	const adapterInstalled = adapterPresent || hasMcpAdapterExecutable();
 
@@ -177,7 +178,7 @@ function buildStatus(
 		`pi-mcp-adapter installed:    ${adapterInstalled ? "yes" : "no"}`,
 		`pi-mcp-adapter loaded now:   ${adapterPresent ? "yes" : "no"}`,
 		`config entries:              ${configHits.length ? configHits.join(", ") : "none"}`,
-		`auth file:                   ${existsSync(authPath) ? authPath : "missing"}`,
+		`auth file:                   ${authPath ?? "missing (imported into the OS credential store, or not logged in)"}`,
 	];
 
 	if (auth?.tokens?.expiresAt) {

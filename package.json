@@ -43,7 +43,7 @@
   ],
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
-    "pi-mcp-adapter": ">=2.5.4"
+    "pi-mcp-adapter": ">=2.13.0"
   },
   "peerDependenciesMeta": {
     "pi-mcp-adapter": {

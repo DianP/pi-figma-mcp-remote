@@ -82,10 +82,18 @@ Config targets:
 - `--project`: writes `.pi/mcp.json`
 - `--shared`: writes `.mcp.json`
 
-Token store (written by `login`, removed by `logout`):
+Token store (written by `login`, removed by `logout`). `pi-mcp-adapter` addresses each
+server by `sha256-<sha256(serverName)>`, so for `figma` the directory is
+`sha256-5b79d0d574eedd091c02692026ecfa1c617af2432c0a9b401e623e67d78a179c`:
 
-- `$MCP_OAUTH_DIR/figma/tokens.json` when `$MCP_OAUTH_DIR` is set
-- otherwise `~/.pi/agent/mcp-oauth/figma/tokens.json` or `$PI_CODING_AGENT_DIR/mcp-oauth/figma/tokens.json`
+- `$MCP_OAUTH_DIR/sha256-<hash>/tokens.json` when `$MCP_OAUTH_DIR` is set
+- otherwise `~/.pi/agent/mcp-oauth/sha256-<hash>/tokens.json` or `$PI_CODING_AGENT_DIR/mcp-oauth/sha256-<hash>/tokens.json`
+
+`pi-mcp-adapter` >= 2.13.0 imports that plaintext file into the OS credential store
+(Keychain / Credential Manager / Secret Service) on the next connect and deletes it,
+so a missing file after a successful `login` is expected. `logout` also removes token
+files left in the pre-2.13.0 `<base>/<serverName>/tokens.json` layout, but it cannot
+clear credentials already imported into the OS store — use `/mcp-auth` for that.
 
 ## Security
 

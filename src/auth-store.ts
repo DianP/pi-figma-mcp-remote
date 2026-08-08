@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
 	chmodSync,
 	existsSync,
@@ -37,9 +38,35 @@ export interface AdapterAuthEntry {
 	serverUrl?: string;
 }
 
+/**
+ * Token file paths for a server, current layout first.
+ *
+ * pi-mcp-adapter >= 2.13.0 keeps persistent OAuth credentials in the OS
+ * credential store and imports legacy plaintext entries from
+ * `<base>/sha256-<sha256(serverName)>/tokens.json`. Writing only to the plain
+ * `<base>/<serverName>/tokens.json` directory that older releases used leaves
+ * the adapter unaware of the credentials, so it retries its own dynamic client
+ * registration and Figma rejects that with HTTP 403.
+ */
+export function getAuthFilePathCandidates(serverName: string): string[] {
+	const base = expandHome(
+		process.env.MCP_OAUTH_DIR?.trim() || getAgentPath("mcp-oauth"),
+	);
+	const account = `sha256-${createHash("sha256").update(serverName, "utf8").digest("hex")}`;
+	return [
+		join(base, account, "tokens.json"),
+		join(base, serverName, "tokens.json"),
+	];
+}
+
+/** Path `login` writes to. */
 export function getAuthFilePath(serverName: string): string {
-	const base = process.env.MCP_OAUTH_DIR?.trim() || getAgentPath("mcp-oauth");
-	return join(expandHome(base), serverName, "tokens.json");
+	return getAuthFilePathCandidates(serverName)[0] as string;
+}
+
+/** First existing token file across both layouts, if any. */
+export function findAuthFilePath(serverName: string): string | undefined {
+	return getAuthFilePathCandidates(serverName).find((path) => existsSync(path));
 }
 
 export function saveAdapterAuth(
@@ -83,9 +110,13 @@ export function readAuthEntry(path: string): AdapterAuthEntry | undefined {
 	}
 }
 
+/** Removes plaintext token files from every known layout. */
 export function removeAuthFile(serverName: string): boolean {
-	const authPath = getAuthFilePath(serverName);
-	if (!existsSync(authPath)) return false;
-	rmSync(authPath, { force: true });
-	return true;
+	let removed = false;
+	for (const authPath of getAuthFilePathCandidates(serverName)) {
+		if (!existsSync(authPath)) continue;
+		rmSync(authPath, { force: true });
+		removed = true;
+	}
+	return removed;
 }

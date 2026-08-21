@@ -137,8 +137,14 @@ async function dispatch(
 			const removed = removeAuthFile(command.serverName);
 			ctx.ui.notify(
 				removed
-					? `Cleared Figma OAuth credentials for "${command.serverName}".`
-					: `No Figma OAuth credentials found for "${command.serverName}".`,
+					? [
+							`Removed plaintext Figma OAuth token file(s) for "${command.serverName}".`,
+							`Credentials already imported into the OS credential store are not affected — run /mcp logout ${command.serverName} to clear those.`,
+						].join("\n")
+					: [
+							`No plaintext Figma OAuth token files found for "${command.serverName}".`,
+							`If you logged in and connected, pi-mcp-adapter imported them into the OS credential store — run /mcp logout ${command.serverName} to clear those.`,
+						].join("\n"),
 				"info",
 			);
 			return;
@@ -178,7 +184,7 @@ function buildStatus(
 		`pi-mcp-adapter installed:    ${adapterInstalled ? "yes" : "no"}`,
 		`pi-mcp-adapter loaded now:   ${adapterPresent ? "yes" : "no"}`,
 		`config entries:              ${configHits.length ? configHits.join(", ") : "none"}`,
-		`auth file:                   ${authPath ?? "missing (imported into the OS credential store, or not logged in)"}`,
+		`auth file:                   ${authPath ?? "missing (not logged in, or already imported into the OS credential store)"}`,
 	];
 
 	if (auth?.tokens?.expiresAt) {

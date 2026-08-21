@@ -1,6 +1,6 @@
 {
   "name": "pi-figma-remote-auth",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Pi extension that authenticates and configures Figma Remote MCP for pi-mcp-adapter.",
   "type": "module",
   "license": "MIT",

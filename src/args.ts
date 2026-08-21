@@ -250,9 +250,9 @@ function parsePort(value: string): number {
 }
 
 function validateServerName(serverName: string): string {
-	if (!/^[A-Za-z0-9_.-]+$/.test(serverName)) {
+	if (!/^[A-Za-z0-9_.-]+$/.test(serverName) || /^\.+$/.test(serverName)) {
 		throw new Error(
-			"Server name may contain only letters, numbers, dot, underscore, and dash",
+			"Server name may contain only letters, numbers, dot, underscore, and dash (and cannot be dots only)",
 		);
 	}
 	return serverName;
